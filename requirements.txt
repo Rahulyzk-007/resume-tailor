@@ -1,5 +1,6 @@
 streamlit
-google-generativeai
 PyMuPDF
-weasyprint
+google-generativeai
+markdown2
+xhtml2pdf
 fitz

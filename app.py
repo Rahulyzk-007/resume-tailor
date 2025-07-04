@@ -1,14 +1,16 @@
 import streamlit as st
 import fitz  # PyMuPDF
 import google.generativeai as genai
+import markdown2
 from xhtml2pdf import pisa
 import tempfile
 import os
 
-# Configure Gemini API
+# Set Gemini API Key
 genai.configure(api_key="AIzaSyBGLXsZ5vcgOHAxbD9gLflGNOuWjKfgywQ")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
+# Streamlit UI Setup
 st.set_page_config(page_title="Resume Tailor", layout="centered")
 st.title("🎯 Resume Tailor — Harvard Format Generator")
 
@@ -16,6 +18,17 @@ st.title("🎯 Resume Tailor — Harvard Format Generator")
 resume_file = st.file_uploader("📄 Upload your Resume (PDF only)", type=["pdf"])
 jd_text = st.text_area("🧾 Paste the Job Description here")
 
+# Markdown → HTML
+def markdown_to_html(md_text: str) -> str:
+    return markdown2.markdown(md_text, extras=["fenced-code-blocks"])
+
+# HTML → PDF
+def html_to_pdf(html_content: str, output_path: str) -> bool:
+    with open(output_path, "w+b") as result_file:
+        pisa_status = pisa.CreatePDF(html_content, dest=result_file)
+    return pisa_status.err == 0
+
+# Optional: Wrap HTML in style block for formatting
 def wrap_html_in_style(content):
     return f"""
 <html>
@@ -23,24 +36,25 @@ def wrap_html_in_style(content):
   <style>
     body {{
       font-family: Arial, sans-serif;
-      font-size: 11pt;
-      line-height: 1.1;
-      margin: 20px;
+      font-size: 12pt;
+      line-height: 1.3;
+      margin: 30px;
+    }}
+    h1, h2 {{
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 6px;
     }}
     hr {{
-      border: 1px solid #999;
-      margin: 6px 0;
-    }}
-    h2, h3 {{
-      text-transform: uppercase;
-      margin-bottom: 4px;
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 10px 0;
     }}
     ul {{
-      margin: 4px 0 4px 16px;
-      padding: 0;
+      margin: 0 0 0 16px;
     }}
     li {{
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }}
   </style>
 </head>
@@ -49,8 +63,8 @@ def wrap_html_in_style(content):
 </body>
 </html>
 """
-import fitz  # PyMuPDF
 
+# Extract reference format from your best resume (optional for prompting)
 def extract_text_from_pdf(pdf_path):
     with fitz.open(pdf_path) as doc:
         text = ""
@@ -58,67 +72,69 @@ def extract_text_from_pdf(pdf_path):
             text += page.get_text()
     return text
 
-reference_resume_text = extract_text_from_pdf("Copy of RAHUL RESUME.pdf")
+# Load and extract your template resume for layout reference
+reference_resume_text = extract_text_from_pdf("Copy of RAHUL RESUME.pdf") if os.path.exists("Copy of RAHUL RESUME.pdf") else ""
 
-
-# Function to convert HTML to PDF using xhtml2pdf
-def convert_html_to_pdf(html_content, output_path):
-    with open(output_path, "w+b") as result_file:
-        pisa_status = pisa.CreatePDF(html_content, dest=result_file)
-    return pisa_status.err == 0
-
+# Main Button Logic
 if st.button("🚀 Tailor Resume"):
     if not resume_file or not jd_text:
         st.warning("Please upload a resume and paste the job description.")
     else:
-        # Step 1: Extract text from uploaded PDF
+        # Extract resume text from uploaded file
         with fitz.open(stream=resume_file.read(), filetype="pdf") as doc:
             resume_text = ""
             for page in doc:
                 resume_text += page.get_text()
 
-        # Step 2: Send resume text + JD to Gemini
+        # Prompt Gemini to tailor the resume
         prompt = f"""
-You are a resume rewriting expert.
+You are a resume tailoring expert.
 
-Here is the ideal resume format I want you to learn and always follow. It includes the desired section order, heading styles (ALL CAPS), compact layout, minimal line spacing, and bullet point structure.
+Below is the reference resume layout. Use it as a structural and formatting guide. Keep sections, headings (ALL CAPS), and order the same.
 
-📄 Reference Resume Format:
-{reference_resume_text}  ← (this is plain text extracted from your best PDF — Harvard_Tailored_Resume-5.pdf)
+Reference Format:
+{reference_resume_text}
 
-Now, tailor the following resume to match the job description, and rewrite it **in the exact same format and layout** as above.
+Now tailor the following resume to match the job description.
 
-📋 Resume to Tailor:
+Resume:
 {resume_text}
 
-📌 Job Description:
+Job Description:
 {jd_text}
 
-➤ Return only the rewritten resume in **clean HTML**, keeping the same structure, section names, layout, bullet styles, heading formatting, and single-page structure as the reference. No explanation, no markdown, no comments.
+➤ Output the tailored resume in **Markdown** format:
+- Use `#` or `##` for section headings
+- Use `-` for bullet points
+- Use `---` to separate sections
+- Keep it compact and readable
+
+Return only the final Markdown content. No explanations.
 """
+
         try:
             st.info("✍️ Generating tailored resume with Gemini...")
             response = model.generate_content(prompt)
-            html_resume = response.text
+            md_resume = response.text
 
-            # Step 3: Convert HTML to PDF
+            # Convert Markdown → HTML
+            html_body = markdown_to_html(md_resume)
+            html_wrapped = wrap_html_in_style(html_body)
+
+            # Save to PDF
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as pdf_file:
-                html_wrapped=wrap_html_in_style(html_resume)
-                success = convert_html_to_pdf(html_wrapped, pdf_file.name)
+                success = html_to_pdf(html_wrapped, pdf_file.name)
                 if success:
                     st.success("✅ Resume tailored successfully!")
-
-                    # Step 4: Download link
                     with open(pdf_file.name, "rb") as f:
                         st.download_button(
-                            label="📥 Download Tailored Harvard Resume (PDF)",
+                            label="📥 Download Tailored Resume (PDF)",
                             data=f,
-                            file_name="Harvard_Tailored_Resume.pdf",
+                            file_name="Tailored_Resume.pdf",
                             mime="application/pdf"
                         )
                 else:
-                    st.error("❌ Failed to generate PDF. HTML may contain unsupported elements.")
-
+                    st.error("❌ Failed to generate PDF from formatted resume.")
                 os.remove(pdf_file.name)
 
         except Exception as e:
