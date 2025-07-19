@@ -15,20 +15,75 @@ st.set_page_config(page_title="Resume Tailor Pro", page_icon="🎯", layout="wid
 # --- CUSTOM STYLING (CSS) ---
 st.markdown("""
 <style>
-    /* (Your custom CSS is here - no changes needed) */
-    .stApp { background-color: #f0f2f6; }
-    .main .block-container { padding: 2rem 5rem; }
-    h1 { color: #1a1a2e; text-align: center; }
-    h3 { color: #4a4a6a; }
+    /* --- BASE STYLES (Light Theme) --- */
+    .stApp {
+        background-color: #f0f2f6;
+    }
+    .main .block-container {
+        padding-top: 2rem; padding-bottom: 2rem; padding-left: 5rem; padding-right: 5rem;
+    }
+    h1 {
+        color: #1a1a2e;
+        text-align: center;
+    }
+    h3 {
+        color: #4a4a6a;
+    }
     .stButton>button {
-        color: #ffffff; background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
-        border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px;
-        font-weight: bold; transition: all 0.3s ease-in-out;
+        color: #ffffff;
+        background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.3s ease-in-out;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
-    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); }
-    .stFileUploader { border: 2px dashed #4b6cb7; background-color: #ffffff; border-radius: 8px; padding: 20px; }
-    .stTextArea textarea { border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 300px; }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    .stFileUploader {
+        border: 2px dashed #4b6cb7;
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    .stTextArea textarea {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        min-height: 300px;
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    /* --- DARK THEME STYLES --- */
+    @media (prefers-color-scheme: dark) {
+        .stApp {
+            background-color: #0e1117; /* Streamlit's default dark background */
+        }
+        h1 {
+            color: #ffffff;
+        }
+        h3 {
+            color: #e1e1e1;
+        }
+        .stFileUploader {
+            border-color: #5a5a77;
+            background-color: #1c1c2e;
+        }
+        /* Style for text inside file uploader */
+        .stFileUploader label {
+            color: #e1e1e1;
+        }
+        .stTextArea textarea {
+            background-color: #0e1117;
+            color: #ffffff;
+            border-color: #5a5a77;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
