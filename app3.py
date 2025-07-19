@@ -36,6 +36,7 @@ if st.button("🚀 Tailor Resume"):
             resume_text = "".join(page.get_text() for page in doc)
 
         # 2. Define the new prompt that asks for reordering instead of removal
+
         json_prompt = f"""
         You are an expert resume writer and data extractor. Your task is to analyze the provided resume and job description, then output a structured JSON object.
 
@@ -50,70 +51,69 @@ if st.button("🚀 Tailor Resume"):
         ```
 
         **Instructions:**
-        1.  Rewrite the "summary" to be a concise, 2-3 sentence paragraph targeting the job.
-        2.  For "work_experience" and "projects", analyze every item from the original resume.
-        3.  Sort them into two groups: "relevant" (matches the job description) and "other" (less relevant).
-        4.  **Do not discard any items.** Place all work experience and all projects into these groups.
+        1.  Extract all information **exclusively** from the "Original Resume Content" provided above.
+        2.  Rewrite the "summary" to be a concise, 2-3 sentence paragraph targeting the job.
+        3.  Sort all "work_experience" and "projects" into two groups: "relevant" (matches the job description) and "other" (less relevant).
+        4.  **Do not discard any items.**
         5.  **IMPORTANT:** All string values in the JSON must be plain text. Do NOT use any Markdown formatting.
-        6.  The entire output must be a single, valid JSON object.
+        6.  The entire output must be a single, valid JSON object, following the structure in the example below.
 
         ```json
         {{
-          "name": "Rahul Asam",
-          "phone": "(+91) 9701597895",
-          "email": "rahulasam007@gmail.com",
-          "linkedin_url": "[https://linkedin.com/in/asam-rahul](https://linkedin.com/in/asam-rahul)",
-          "github_url": "[https://github.com/Rahulyzk-007](https://github.com/Rahulyzk-007)",
-          "summary": "A tailored professional summary...",
-          "education": {{
-            "university": "Osmania University",
-            "duration": "Nov 2021 – May 2025",
-            "degree": "Bachelor of Engineering in Computer Science",
-            "gpa": "9.15/10.0"
-          }},
-          "work_experience": {{
+        "name": "Full Name from Resume",
+        "phone": "Phone Number from Resume",
+        "email": "Email Address from Resume",
+        "linkedin_url": "LinkedIn URL from Resume",
+        "github_url": "GitHub URL from Resume",
+        "summary": "A tailored professional summary based on the resume and job description...",
+        "education": {{
+            "university": "University Name from Resume",
+            "duration": "Dates from Resume",
+            "degree": "Degree Name from Resume",
+            "gpa": "GPA from Resume"
+        }},
+        "work_experience": {{
             "relevant": [
-              {{
-                "role": "Data Science Intern",
-                "company": "Solix Technologies",
-                "duration": "May 2024 – July 2024",
-                "points": ["Relevant point 1...", "Relevant point 2..."]
-              }}
+            {{
+                "role": "Relevant Job Role",
+                "company": "Company Name",
+                "duration": "Dates",
+                "points": ["Description of a relevant achievement...", "Another relevant achievement..."]
+            }}
             ],
             "other": [
-              {{
-                "role": "Research and Development Intern",
-                "company": "Tejas Networks",
-                "duration": "Jan 2025 – Present",
-                "points": ["Other point 1...", "Other point 2..."]
-              }}
+            {{
+                "role": "Other Job Role",
+                "company": "Company Name",
+                "duration": "Dates",
+                "points": ["Description of another achievement...", "And another..."]
+            }}
             ]
-          }},
-          "projects": {{
+        }},
+        "projects": {{
             "relevant": [
-               {{
-                  "name": "X-rays Detection Model",
-                  "technologies": "Python, TensorFlow, CNNs, VGG16, ResNet, Streamlit",
-                  "description": ["Relevant project description..."]
-               }}
+            {{
+                "name": "Relevant Project Name",
+                "technologies": "Technologies Used",
+                "description": ["Description of the relevant project..."]
+            }}
             ],
             "other": [
-               {{
-                  "name": "ConnectFy: Reliable Offline Chat",
-                  "technologies": "Android Studio, Java/Kotlin, Bluetooth, Wi-Fi Direct",
-                  "description": ["Other project description..."]
-               }}
+            {{
+                "name": "Other Project Name",
+                "technologies": "Technologies Used",
+                "description": ["Description of the other project..."]
+            }}
             ]
-          }},
-          "skills": {{
-            "Languages": "Python, Java, SQL",
-            "Libraries": "TensorFlow, Keras, Pandas, NumPy, Scikit-learn",
-            "Tools": "Git, GCP, VS Code, Jupyter"
-          }},
-          "achievements": [
-            "Secured a full merit-based scholarship for outstanding academic excellence.",
-            "Consistently ranked among the top 3% of students at Osmania University."
-          ]
+        }},
+        "skills": {{
+            "Category 1": "List of skills...",
+            "Category 2": "List of skills..."
+        }},
+        "achievements": [
+            "Achievement from resume...",
+            "Another achievement from resume..."
+        ]
         }}
         ```
         """
@@ -156,7 +156,7 @@ if st.button("🚀 Tailor Resume"):
                 with open(tex_output_path, "w", encoding="utf-8") as f:
                     f.write(rendered_tex)
                 
-                pdflatex_path = "pdflatex"
+                pdflatex_path = "/Library/TeX/texbin/pdflatex"
                 cmd = [pdflatex_path, "-interaction=nonstopmode", tex_output_path]
                 subprocess.run(cmd, capture_output=True, text=True)
                 subprocess.run(cmd, capture_output=True, text=True)
