@@ -185,6 +185,8 @@ if tailor_button:
         
         filename_base = "Tailored_Resume_Pro"
         
+        # Find this block in your app.py and replace it completely
+
         try:
             with st.spinner("✨ Contacting Gemini... Crafting your new resume..."):
                 response = model.generate_content(json_prompt)
@@ -215,16 +217,17 @@ if tailor_button:
                 template = env.get_template("resume_template.tex")
                 rendered_tex = template.render(resume_data)
 
-            with st.spinner("📄 Compiling your new PDF..."):
+            with st.spinner("📄 Compiling your new PDF on the server..."):
                 tex_output_path = f"{filename_base}.tex"
                 pdf_output_path = f"{filename_base}.pdf"
                 with open(tex_output_path, "w", encoding="utf-8") as f:
                     f.write(rendered_tex)
                 
-                pdflatex_path = "pdflatex"
+                pdflatex_path = "/Library/TeX/texbin/pdflatex"
+                # Re-enabling check=True to catch any failure on the server
                 cmd = [pdflatex_path, "-interaction=nonstopmode", tex_output_path]
-                subprocess.run(cmd, capture_output=True, text=True)
-                subprocess.run(cmd, capture_output=True, text=True)
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
 
             st.success("✅ Your new resume is ready!")
             with open(pdf_output_path, "rb") as pdf_file:
@@ -237,8 +240,8 @@ if tailor_button:
                 )
 
         except subprocess.CalledProcessError as e:
-            st.error("🔴 **Error:** LaTeX Compilation Failed.")
-            st.write("The `pdflatex` command failed. This can happen with unusual characters or formatting. Here is the log:")
+            st.error("🔴 **Error:** LaTeX Compilation Failed on the server.")
+            st.write("The `pdflatex` command failed. This is the log from the server, which should tell us which package is missing:")
             full_log = f"--- STDOUT ---\n{e.stdout}\n\n--- STDERR ---\n{e.stderr}"
             st.code(full_log, language="log")
         except Exception as e:
@@ -250,4 +253,3 @@ if tailor_button:
                 cleanup_path = f"{filename_base}{ext}"
                 if os.path.exists(cleanup_path):
                     os.remove(cleanup_path)
-
