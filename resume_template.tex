@@ -2,7 +2,7 @@
 
 % --- PACKAGES FOR STYLING ---
 \usepackage[utf8]{inputenc}
-\usepackage{newtxtext, newtxmath} % Use Times New Roman font
+\usepackage{newtxtext, newtxmath}
 \usepackage[T1]{fontenc}
 \usepackage[
   left=0.6in,
@@ -11,9 +11,9 @@
   bottom=0.4in
 ]{geometry}
 \usepackage{hyperref}
-\usepackage{enumitem} % For custom list formatting
-\usepackage{titlesec} % For custom section formatting
-\usepackage[normalem]{ulem} % For underlining (\uline)
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[normalem]{ulem}
 \usepackage{xcolor}
 
 % --- CUSTOMIZATION ---
@@ -26,36 +26,27 @@
     urlcolor=linkcolor,
     pdftitle={Resume},
 }
-
-% Turn off section numbering globally
 \setcounter{secnumdepth}{0}
-
-% Define the style for your main sections (e.g., EDUCATION)
-% This creates BOLD, ALL-CAPS, UNDERLINED text.
 \titleformat{\section}
-  {\bfseries\large\MakeUppercase} % Font size reduced from \Large to \large
+  {\bfseries\large\MakeUppercase}
   {}
   {0em}
-  {\uline} % The underlining command
-\titlespacing{\section}{0pt}{6pt}{4pt} % Reduced vertical spacing
-
-% Customize bullet points for tighter left alignment
+  {\uline}
+\titlespacing{\section}{0pt}{6pt}{4pt}
 \setlist[itemize]{
-  leftmargin=1.2em, % Further reduced left margin for tighter alignment
+  leftmargin=1.2em,
   label=\textbullet,
-  topsep=1pt, % Reduced spacing
+  topsep=1pt,
   partopsep=0pt,
-  itemsep=1pt, % Reduced spacing
+  itemsep=1pt,
   parsep=0pt
 }
-
 
 % --- DOCUMENT START ---
 \begin{document}
 
 % --- HEADER SECTION ---
 \begin{center}
-    % Font size for name reduced from \Huge to \LARGE
     {\LARGE\bfseries \VAR{name | upper} } \\[4pt]
     \VAR{phone} $\cdot$ \href{mailto:\VAR{email}}{\VAR{email}} $\cdot$ \href{\VAR{linkedin_url}}{\VAR{linkedin_url | replace("https://", "")}} $\cdot$ \href{\VAR{github_url}}{\VAR{github_url | replace("https://", "")}}
 \end{center}
@@ -63,11 +54,9 @@
 % --- SUMMARY SECTION ---
 \vspace{2pt}
 \VAR{summary}
-% Added horizontal line after the summary
 \vspace{4pt}
 \hrule
 \vspace{4pt}
-
 
 % --- DYNAMIC SECTIONS ---
 \section{Education}
@@ -89,7 +78,6 @@
     \end{itemize}
 \end{itemize}
 \BLOCK{endfor}
-
 %# Then, loop through the other experience
 \BLOCK{for job in work_experience.other}
 \begin{itemize}
@@ -114,7 +102,6 @@
     \end{itemize}
 \end{itemize}
 \BLOCK{endfor}
-
 %# Then, loop through other projects
 \BLOCK{for project in projects.other}
 \begin{itemize}
@@ -130,7 +117,8 @@
 \section{Technical Skills}
 \begin{itemize}
     \BLOCK{for category, skills_list in skills.items()}
-        \item \textbf{\VAR{category.replace('_', ' ')}:} \VAR{skills_list}
+        % This line now escapes both '&' and '#' characters to prevent LaTeX errors
+        \item \textbf{\VAR{category.replace('_', ' ').replace('&', '\\&').replace('#', '\\#')}:} \VAR{skills_list.replace('&', '\\&').replace('#', '\\#')}
     \BLOCK{endfor}
 \end{itemize}
 
