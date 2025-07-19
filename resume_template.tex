@@ -22,7 +22,7 @@
 \hypersetup{
     colorlinks=true,
     linkcolor=linkcolor,
-    filecolor=linkcolor,      
+    filecolor=linkcolor,
     urlcolor=linkcolor,
     pdftitle={Resume},
 }
@@ -48,7 +48,9 @@
 % --- HEADER SECTION ---
 \begin{center}
     {\LARGE\bfseries \VAR{name | upper} } \\[4pt]
-    \VAR{phone} $\cdot$ \href{mailto:\VAR{email}}{\VAR{email}} $\cdot$ \href{\VAR{linkedin_url}}{\VAR{linkedin_url | replace("https://", "")}} $\cdot$ \href{\VAR{github_url}}{\VAR{github_url | replace("https://", "")}}
+    \VAR{phone} $\cdot$ \href{mailto:\VAR{email}}{\VAR{email}} $\cdot$ 
+    \href{\VAR{linkedin_url}}{\VAR{linkedin_url | replace("https://", "")}} $\cdot$ 
+    \href{\VAR{github_url}}{\VAR{github_url | replace("https://", "")}}
 \end{center}
 
 % --- SUMMARY SECTION ---
@@ -58,75 +60,99 @@
 \hrule
 \vspace{4pt}
 
-% --- DYNAMIC SECTIONS ---
+% --- EDUCATION ---
 \section{Education}
+\BLOCK{if education}
 \begin{itemize}
     \item[] \textbf{\VAR{education.university}} \hfill \VAR{education.duration} \\
     \VAR{education.degree} \\
     \textit{CGPA: \VAR{education.gpa}}
 \end{itemize}
+\BLOCK{endif}
 
+% --- WORK EXPERIENCE ---
 \section{Work Experience}
-%# First, loop through the relevant experience
-\BLOCK{for job in work_experience.relevant}
-\begin{itemize}
+\BLOCK{if work_experience.relevant}
+  \BLOCK{for job in work_experience.relevant}
+  \begin{itemize}
     \item[] \textbf{\VAR{job.role}, \VAR{job.company}} \hfill \textit{\VAR{job.duration}}
+    \BLOCK{if job.points and job.points|length > 0}
     \begin{itemize}
-    \BLOCK{for point in job.points}
+      \BLOCK{for point in job.points}
         \item \VAR{point}
-    \BLOCK{endfor}
+      \BLOCK{endfor}
     \end{itemize}
-\end{itemize}
-\BLOCK{endfor}
-%# Then, loop through the other experience
-\BLOCK{for job in work_experience.other}
-\begin{itemize}
-    \item[] \textbf{\VAR{job.role}, \VAR{job.company}} \hfill \textit{\VAR{job.duration}}
-    \begin{itemize}
-    \BLOCK{for point in job.points}
-        \item \VAR{point}
-    \BLOCK{endfor}
-    \end{itemize}
-\end{itemize}
-\BLOCK{endfor}
+    \BLOCK{endif}
+  \end{itemize}
+  \BLOCK{endfor}
+\BLOCK{endif}
 
+\BLOCK{if work_experience.other}
+  \BLOCK{for job in work_experience.other}
+  \begin{itemize}
+    \item[] \textbf{\VAR{job.role}, \VAR{job.company}} \hfill \textit{\VAR{job.duration}}
+    \BLOCK{if job.points and job.points|length > 0}
+    \begin{itemize}
+      \BLOCK{for point in job.points}
+        \item \VAR{point}
+      \BLOCK{endfor}
+    \end{itemize}
+    \BLOCK{endif}
+  \end{itemize}
+  \BLOCK{endfor}
+\BLOCK{endif}
+
+% --- ACADEMIC PROJECTS ---
 \section{Academic Projects}
-%# First, loop through relevant projects
-\BLOCK{for project in projects.relevant}
-\begin{itemize}
+\BLOCK{if projects.relevant}
+  \BLOCK{for project in projects.relevant}
+  \begin{itemize}
     \item[] \textbf{\VAR{project.name}} | \textit{\VAR{project.technologies}}
+    \BLOCK{if project.description and project.description|length > 0}
     \begin{itemize}
-    \BLOCK{for point in project.description}
+      \BLOCK{for point in project.description}
         \item \VAR{point}
-    \BLOCK{endfor}
+      \BLOCK{endfor}
     \end{itemize}
-\end{itemize}
-\BLOCK{endfor}
-%# Then, loop through other projects
-\BLOCK{for project in projects.other}
-\begin{itemize}
-    \item[] \textbf{\VAR{project.name}} | \textit{\VAR{project.technologies}}
-    \begin{itemize}
-    \BLOCK{for point in project.description}
-        \item \VAR{point}
-    \BLOCK{endfor}
-    \end{itemize}
-\end{itemize}
-\BLOCK{endfor}
+    \BLOCK{endif}
+  \end{itemize}
+  \BLOCK{endfor}
+\BLOCK{endif}
 
+\BLOCK{if projects.other}
+  \BLOCK{for project in projects.other}
+  \begin{itemize}
+    \item[] \textbf{\VAR{project.name}} | \textit{\VAR{project.technologies}}
+    \BLOCK{if project.description and project.description|length > 0}
+    \begin{itemize}
+      \BLOCK{for point in project.description}
+        \item \VAR{point}
+      \BLOCK{endfor}
+    \end{itemize}
+    \BLOCK{endif}
+  \end{itemize}
+  \BLOCK{endfor}
+\BLOCK{endif}
+
+% --- TECHNICAL SKILLS ---
 \section{Technical Skills}
+\BLOCK{if skills}
 \begin{itemize}
-    \BLOCK{for category, skills_list in skills.items()}
-        % This line now escapes both '&' and '#' characters to prevent LaTeX errors
-        \item \textbf{\VAR{category.replace('_', ' ').replace('&', '\\&').replace('#', '\\#')}:} \VAR{skills_list.replace('&', '\\&').replace('#', '\\#')}
-    \BLOCK{endfor}
+  \BLOCK{for category, skills_list in skills.items()}
+    \item \textbf{\VAR{category.replace('_', ' ').replace('&', '\\&').replace('#', '\\#')}:} 
+    \VAR{skills_list.replace('&', '\\&').replace('#', '\\#')}
+  \BLOCK{endfor}
 \end{itemize}
+\BLOCK{endif}
 
+% --- ACHIEVEMENTS ---
 \section{Achievements}
+\BLOCK{if achievements and achievements|length > 0}
 \begin{itemize}
-\BLOCK{for achievement in achievements}
+  \BLOCK{for achievement in achievements}
     \item \VAR{achievement}
-\BLOCK{endfor}
+  \BLOCK{endfor}
 \end{itemize}
+\BLOCK{endif}
 
 \end{document}
