@@ -202,7 +202,7 @@ if st.session_state.stage == "PROCESS":
             with open(tex_output_path, "w", encoding="utf-8") as f:
                 f.write(rendered_tex)
             
-            pdflatex_path = "/Library/TeX/texbin/pdflatex"
+            pdflatex_path = "pdflatex"
             cmd = [pdflatex_path, "-interaction=nonstopmode", tex_output_path]
             subprocess.run(cmd, check=True, capture_output=True, text=True)
             subprocess.run(cmd, check=True, capture_output=True, text=True)
