@@ -1,5 +1,5 @@
 import streamlit as st
-import fitz  # PyMuPDF
+import fitz
 import google.generativeai as genai
 import json
 import subprocess
@@ -7,13 +7,10 @@ import os
 import re
 import jinja2
 import time
+import uuid # Import the UUID library for unique IDs
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(
-    page_title="Resume Tailor Pro",
-    page_icon="🎯",
-    layout="wide"
-)
+st.set_page_config(page_title="Resume Tailor Pro", page_icon="🎯", layout="wide")
 
 # --- CUSTOM STYLING (CSS) ---
 st.markdown("""
@@ -35,71 +32,78 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 # --- API CONFIGURATION ---
 try:
     api_key = "AIzaSyBGLXsZ5vcgOHAxbD9gLflGNOuWjKfgywQ"
     genai.configure(api_key=api_key)
-    # Use a valid and current model name
     model = genai.GenerativeModel("gemini-1.5-flash")
 except Exception as e:
     st.error("🔴 **Error:** Failed to configure Gemini API. Please ensure your `GEMINI_API_KEY` is set in your Streamlit secrets.")
     st.stop()
 
+# --- SESSION STATE INITIALIZATION ---
+# This ensures our variables exist across reruns
+if 'tailor_clicked' not in st.session_state:
+    st.session_state.tailor_clicked = False
+
+def start_new_resume():
+    """Resets the state to start fresh."""
+    st.session_state.tailor_clicked = False
+    # This tells the file_uploader to reset
+    st.session_state.resume_uploader = None
+
 
 # --- UI LAYOUT ---
 st.title("🎯 Resume Tailor Pro")
 st.write("")
+
+# Add a button to clear the state and start over
+st.button("Start New Resume", on_click=start_new_resume)
+
 col1, col2 = st.columns(2, gap="large")
 with col1:
     st.subheader("1. Upload Your Resume")
-    # Using a key helps Streamlit manage the state of this widget
     resume_file = st.file_uploader("Drop your resume here", type=["pdf"], key="resume_uploader", label_visibility="collapsed")
 with col2:
     st.subheader("2. Paste the Job Description")
     jd_text = st.text_area("Paste the full job description", height=300, label_visibility="collapsed")
 st.write("")
+
 col_button1, col_button2, col_button3 = st.columns([1,1,1])
 with col_button2:
-    tailor_button = st.button("🚀 Tailor My Resume!", use_container_width=True)
-
+    if st.button("🚀 Tailor My Resume!", use_container_width=True):
+        st.session_state.tailor_clicked = True
 
 # --- MAIN LOGIC ---
-if tailor_button:
+if st.session_state.tailor_clicked:
     if not resume_file or not jd_text:
         st.warning("⚠️ Please upload a resume and paste the job description.")
+        st.session_state.tailor_clicked = False # Reset state if inputs are missing
     else:
-        # Read the content from the uploaded file
         resume_text = "".join(page.get_text() for page in fitz.open(stream=resume_file.read(), filetype="pdf"))
 
-        # --- NEW DEBUG SECTION ---
-        # This will show you exactly what text is being sent to the AI.
-        with st.expander("👀 Click to verify the resume text being processed"):
-            st.info("The text below was extracted from your uploaded PDF. If this is not the correct content, it confirms a server caching issue.")
-            st.text_area("Extracted Text:", resume_text, height=200, disabled=True)
-        # --- END DEBUG SECTION ---
+        # --- AGGRESSIVE CACHE BUSTER ---
+        # A unique ID for every single request
+        request_id = str(uuid.uuid4())
 
-        cache_buster = time.time()
         json_prompt = f"""
         You are an expert resume writer and data extractor. Your task is to analyze the provided resume and job description, then output a structured JSON object.
-        # Cache Buster: {cache_buster}
+        # Unique Request ID (process this new request): {request_id}
 
         **Original Resume Content:**
         ```
         {resume_text}
         ```
-
         **Target Job Description:**
         ```
         {jd_text}
         ```
-
         **Instructions:**
-        1. Extract all information **exclusively** from the "Original Resume Content" provided above.
+        1. Extract all information **exclusively** from the "Original Resume Content" for request ID {request_id}.
         2. Rewrite the "summary" to be a concise, 2-3 sentence paragraph targeting the job.
-        3. Sort all "work_experience" and "projects" into two groups: "relevant" and "other".
+        3. Sort all "work_experience" and "projects" into "relevant" and "other" groups.
         4. **Do not discard any items.**
-        5. **IMPORTANT:** All string values in the JSON must be plain text. Do NOT use any Markdown formatting.
+        5. **IMPORTANT:** All string values in the JSON must be plain text. Do NOT use Markdown.
         6. The entire output must be a single, valid JSON object following the example structure.
 
         ```json
@@ -165,7 +169,6 @@ if tailor_button:
         filename_base = "Tailored_Resume"
         
         try:
-            # (The rest of the script remains the same)
             with st.spinner("✨ Contacting Gemini..."):
                 response = model.generate_content(json_prompt)
                 response_text = response.text
@@ -196,8 +199,8 @@ if tailor_button:
                 
                 pdflatex_path = "pdflatex"
                 cmd = [pdflatex_path, "-interaction=nonstopmode", tex_output_path]
-                subprocess.run(cmd, capture_output=True, text=True)
-                subprocess.run(cmd, capture_output=True, text=True)
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
 
             st.success("✅ Your new resume is ready!")
             person_name = resume_data.get('name', 'Tailored').replace(' ', '_')
@@ -205,12 +208,20 @@ if tailor_button:
             with open(pdf_output_path, "rb") as pdf_file:
                 st.download_button(label="📥 Download Tailored Resume (PDF)", data=pdf_file, file_name=download_filename, mime="application/pdf", use_container_width=True)
 
+        except subprocess.CalledProcessError as e:
+            st.error("🔴 **Error:** LaTeX Compilation Failed.")
+            st.write("The `pdflatex` command failed. Here is the log:")
+            full_log = f"--- STDOUT ---\n{e.stdout}\n\n--- STDERR ---\n{e.stderr}"
+            st.code(full_log, language="log")
         except Exception as e:
             st.error(f"🔴 **An Unexpected Error Occurred:** {e}")
             import traceback
             st.code(traceback.format_exc())
         finally:
+            # Reset the button state after the process is complete
+            st.session_state.tailor_clicked = False
             for ext in ['.tex', '.aux', '.log']:
                 cleanup_path = f"{filename_base}{ext}"
                 if os.path.exists(cleanup_path):
                     os.remove(cleanup_path)
+

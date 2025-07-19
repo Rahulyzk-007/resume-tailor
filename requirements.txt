@@ -7,3 +7,4 @@ fitz
 jinja2
 PyMuPDF
 requests
+uuid
