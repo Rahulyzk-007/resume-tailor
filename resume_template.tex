@@ -139,8 +139,8 @@
 \BLOCK{if skills}
 \begin{itemize}
   \BLOCK{for category, skills_list in skills.items()}
-    \item \textbf{\VAR{category.replace('_', ' ').replace('&', '\\&').replace('#', '\\#')}:} 
-    \VAR{skills_list.replace('&', '\\&').replace('#', '\\#')}
+    \item \textbf{\VAR{(category| default('')).replace('_', ' ').replace('&', '\\&').replace('#', '\\#')}:} 
+    \VAR{(skills_list| default('')).replace('&', '\\&').replace('#', '\\#')}
   \BLOCK{endfor}
 \end{itemize}
 \BLOCK{endif}
