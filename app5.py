@@ -149,8 +149,8 @@ if st.session_state.stage == "PROCESS":
     with st.spinner("Reading resume..."):
         resume_text = "".join(page.get_text() for page in fitz.open(stream=resume_file.read(), filetype="pdf"))
 
-        st.write("enterng//")
-        st.write("ai_result is:",st.session_state)
+        # st.write("enterng//")
+        # st.write("ai_result is:",st.session_state)
     # --- NEW DEBUG SECTION ---
         # This will show you exactly what text is being sent to the AI.
         with st.expander("👀 Click to verify the resume text being processed"):
