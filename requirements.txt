@@ -3,7 +3,6 @@ PyMuPDF
 google-generativeai
 markdown2
 xhtml2pdf
-
 jinja2
 PyMuPDF
 requests

@@ -91,7 +91,7 @@ st.markdown("""
 try:
     api_key = "AIzaSyBGLXsZ5vcgOHAxbD9gLflGNOuWjKfgywQ"
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.5-pro")
+    model = genai.GenerativeModel("gemini-2.5-flash")
 except Exception as e:
     st.error("🔴 **Error:** Failed to configure Gemini API. Please ensure your `GEMINI_API_KEY` is set in your Streamlit secrets.")
     st.stop()
@@ -116,10 +116,18 @@ if st.button("Start Over / Clear"):
 
 col1, col2 = st.columns(2, gap="large")
 with col1:
-    st.subheader("1. Upload Your Resume")
+    st.subheader("1. Upload Your Resume 👇")
     resume_file = st.file_uploader("Drop your resume here", type=["pdf"], label_visibility="collapsed")
+    if resume_file:
+        # st.session_state.ai_result=None
+        if "last_uploaded_name" not in st.session_state:
+            st.session_state.last_uploaded_name = resume_file.name
+        if resume_file.name != st.session_state.last_uploaded_name:
+            st.session_state.ai_result=None
+            st.session_state.stage = "START" 
+            st.session_state.last_uploaded_name = resume_file.name
 with col2:
-    st.subheader("2. Paste the Job Description")
+    st.subheader("2. Paste the Job Description 👇")
     jd_text = st.text_area("Paste the full job description", height=300, label_visibility="collapsed")
 st.write("")
 
@@ -133,10 +141,16 @@ with col_button2:
 
 # --- MAIN LOGIC ---
 if st.session_state.stage == "PROCESS":
+    # set_stage("START") # Reset the stage after processing
+    # for ext in ['.tex', '.aux', '.log']:    
+        # cleanup_path = f"{filename_base}{ext}"
+        # if os.path.exists(cleanup_path):
+        #     os.remove(cleanup_path)
     with st.spinner("Reading resume..."):
         resume_text = "".join(page.get_text() for page in fitz.open(stream=resume_file.read(), filetype="pdf"))
 
-
+        st.write("enterng//")
+        st.write("ai_result is:",st.session_state)
     # --- NEW DEBUG SECTION ---
         # This will show you exactly what text is being sent to the AI.
         with st.expander("👀 Click to verify the resume text being processed"):
@@ -228,59 +242,94 @@ if st.session_state.stage == "PROCESS":
     
     filename_base = "Tailored_Resume"
     
-    try:
-        with st.spinner("✨ Contacting Gemini..."):
-            response = model.generate_content(json_prompt)
-            response_text = response.text
+    if "ai_result" not in st.session_state or st.session_state.ai_result==None:
+    
+        try:
+            with st.spinner("✨ Contacting Gemini..."):
+                response = model.generate_content(json_prompt)
+                response_text = response.text
 
-        with st.spinner("⚙️ Parsing AI response..."):
-            start_index = response_text.find('{')
-            end_index = response_text.rfind('}') + 1
-            if start_index != -1 and end_index != 0:
-                json_string = response_text[start_index:end_index]
-                json_string_cleaned = json_string.strip().encode('utf-8').decode('utf-8-sig')
-                resume_data = json.loads(json_string_cleaned)
-            else:
-                st.error("🔴 **Error:** Could not find a valid JSON object in the AI's response.")
-                st.code(response_text)
-                st.stop()
-        st.success("✅ AI content generated and parsed!")
+            with st.spinner("⚙️ Parsing AI response..."):
+                start_index = response_text.find('{')
+                end_index = response_text.rfind('}') + 1
+                if start_index != -1 and end_index != 0:
+                    json_string = response_text[start_index:end_index]
+                    json_string_cleaned = json_string.strip().encode('utf-8').decode('utf-8-sig')
+                    resume_data = json.loads(json_string_cleaned)
+                else:
+                    st.error("🔴 **Error:** Could not find a valid JSON object in the AI's response.")
+                    st.code(response_text)
+                    st.stop()
+            st.success("✅ AI content generated and parsed!")
 
-        with st.spinner("📝 Injecting content into template..."):
-            env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'), block_start_string='\\BLOCK{', block_end_string='}', variable_start_string='\\VAR{', variable_end_string='}', comment_start_string='\\#{', comment_end_string='}', line_statement_prefix='%%', line_comment_prefix='%#', trim_blocks=True, autoescape=False)
-            template = env.get_template("resume_template.tex")
-            rendered_tex = template.render(resume_data)
+            with st.spinner("📝 Injecting content into template..."):
+                env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'), block_start_string='\\BLOCK{', block_end_string='}', variable_start_string='\\VAR{', variable_end_string='}', comment_start_string='\\#{', comment_end_string='}', line_statement_prefix='%%', line_comment_prefix='%#', trim_blocks=True, autoescape=False)
+                template = env.get_template("resume_template.tex")
+                rendered_tex = template.render(resume_data)
 
-        with st.spinner("📄 Compiling PDF..."):
-            tex_output_path = f"{filename_base}.tex"
-            pdf_output_path = f"{filename_base}.pdf"
-            with open(tex_output_path, "w", encoding="utf-8") as f:
-                f.write(rendered_tex)
+            with st.spinner("📄 Compiling PDF... and DOCX..."):
+                tex_output_path = f"{filename_base}.tex"
+                pdf_output_path = f"{filename_base}.pdf"
+                docx_output_path = f"{filename_base}.docx"
+                with open(tex_output_path, "w", encoding="utf-8") as f:
+                    f.write(rendered_tex)
+                
+                #compile to PDF USING PDFLATEX
+                pdflatex_path = "/Library/TeX/texbin/pdflatex"
+                cmd_pdf = [pdflatex_path, "-interaction=nonstopmode", tex_output_path]
+                subprocess.run(cmd_pdf, check=True, capture_output=True, text=True)
+                subprocess.run(cmd_pdf, check=True, capture_output=True, text=True)
+                
+                #compile to DOCX USING PANDOC
+                pandoc_path="/opt/homebrew/bin/pandoc"
+                cmd_docx = [pandoc_path, tex_output_path, "-o",docx_output_path]
+                subprocess.run(cmd_docx,check=True)
+
+            st.success("✅ Your new resume is ready!")
+            person_name = resume_data.get('name', 'Tailored').replace(' ', '_')
             
-            pdflatex_path = "pdflatex"
-            cmd = [pdflatex_path, "-interaction=nonstopmode", tex_output_path]
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
+            st.session_state.ai_result = "parsed"
+            st.session_state.updated_filename = person_name
+            st.session_state.tex_output_path = tex_output_path
+            st.session_state.pdf_output_path = pdf_output_path
+            st.session_state.docx_output_path = docx_output_path
+            
+            # #PDF Download
+            # download_filename_pdf = f"Tailored_Resume_for_{person_name}.pdf"
+            # with open(pdf_output_path, "rb") as pdf_file:
+            #     st.download_button(label="📥 Download Tailored Resume (PDF)", data=pdf_file, file_name=download_filename_pdf, mime="application/pdf", use_container_width=True)
+                
+            # #DOCX Download
+            # download_filename_docx = f"Tailored_Resume_for_{person_name}.docx"
+            # with open(docx_output_path,"rb") as docx_file:
+            #     st.download_button(label="📥 Download Tailored Resume (DOCX)", data= docx_file, file_name=download_filename_docx, mime= "application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
 
-        st.success("✅ Your new resume is ready!")
-        person_name = resume_data.get('name', 'Tailored').replace(' ', '_')
-        download_filename = f"Tailored_Resume_for_{person_name}.pdf"
-        with open(pdf_output_path, "rb") as pdf_file:
-            st.download_button(label="📥 Download Tailored Resume (PDF)", data=pdf_file, file_name=download_filename, mime="application/pdf", use_container_width=True)
+        except subprocess.CalledProcessError as e:
+            st.error("🔴 **Error:** LaTeX Compilation Failed.")
+            st.write("The `pdflatex` command failed. Here is the log:")
+            full_log = f"--- STDOUT ---\n{e.stdout}\n\n--- STDERR ---\n{e.stderr}"
+            st.code(full_log, language="log")
+        except Exception as e:
+            st.error(f"🔴 **An Unexpected Error Occurred:** {e}")
+            import traceback
+            st.code(traceback.format_exc())
+        finally:
+            # set_stage("START") # Reset the stage after processing
+            for ext in ['.tex', '.aux', '.log']:
+                cleanup_path = f"{filename_base}{ext}"
+                if os.path.exists(cleanup_path):
+                    os.remove(cleanup_path)
 
-    except subprocess.CalledProcessError as e:
-        st.error("🔴 **Error:** LaTeX Compilation Failed.")
-        st.write("The `pdflatex` command failed. Here is the log:")
-        full_log = f"--- STDOUT ---\n{e.stdout}\n\n--- STDERR ---\n{e.stderr}"
-        st.code(full_log, language="log")
-    except Exception as e:
-        st.error(f"🔴 **An Unexpected Error Occurred:** {e}")
-        import traceback
-        st.code(traceback.format_exc())
-    finally:
-        set_stage("START") # Reset the stage after processing
-        for ext in ['.tex', '.aux', '.log']:
-            cleanup_path = f"{filename_base}{ext}"
-            if os.path.exists(cleanup_path):
-                os.remove(cleanup_path)
 
+    if "ai_result" in st.session_state and st.session_state.ai_result:
+        
+        # person_name = resume_data.get('name', 'Tailored').replace(' ', '_')
+        #PDF Download
+        download_filename_pdf = f"Tailored_Resume_for_{st.session_state.updated_filename}.pdf"
+        with open(st.session_state.pdf_output_path, "rb") as pdf_file: 
+            st.download_button(label="📥 Download Tailored Resume (PDF)", data=pdf_file, file_name=download_filename_pdf, mime="application/pdf", use_container_width=True)
+                
+        #DOCX Download
+        download_filename_docx = f"Tailored_Resume_for_{st.session_state.updated_filename}.docx"
+        with open(st.session_state.docx_output_path,"rb") as docx_file:
+            st.download_button(label="📥 Download Tailored Resume (DOCX)", data= docx_file, file_name=download_filename_docx, mime= "application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)

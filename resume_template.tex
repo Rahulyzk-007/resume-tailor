@@ -46,27 +46,39 @@
 \begin{document}
 
 % --- HEADER SECTION ---
-\begin{center}
-    {\LARGE\bfseries \VAR{name | upper} } \\[4pt]
-    \VAR{phone} $\cdot$ \href{mailto:\VAR{email}}{\VAR{email}} $\cdot$ 
-    \href{\VAR{linkedin_url}}{\VAR{linkedin_url | replace("https://", "")}} $\cdot$ 
-    \href{\VAR{github_url}}{\VAR{github_url | replace("https://", "")}}
-\end{center}
+\BLOCK{if name}
+    \begin{center}
+        {\LARGE\bfseries \VAR{name | upper} } \\[4pt]
+        \VAR{phone} $\cdot$ \href{mailto:\VAR{email}}{\VAR{email}} $\cdot$ 
+        \href{\VAR{linkedin_url}}{\VAR{linkedin_url | replace("https://", "")}} $\cdot$ 
+        \href{\VAR{github_url}}{\VAR{github_url | replace("https://", "")}}
+    \end{center}
+\BLOCK{endif}
 
 % --- SUMMARY SECTION ---
+\BLOCK{if summary}
 \vspace{2pt}
 \VAR{summary}
 \vspace{4pt}
 \hrule
 \vspace{4pt}
+\BLOCK{endif}
 
 % --- EDUCATION ---
-\section{Education}
+% --- EDUCATION ---
 \BLOCK{if education}
+\section{Education}
 \begin{itemize}
     \item[] \textbf{\VAR{education.university}} \hfill \VAR{education.duration} \\
     \VAR{education.degree} \\
-    \textit{CGPA: \VAR{education.gpa}}
+    \BLOCK{if cgpa or sgpa or gpa or percentage}
+    \textit{
+        \BLOCK{if cgpa} CGPA: \VAR{cgpa} \BLOCK{endif}
+        \BLOCK{if gpa} GPA: \VAR{gpa} \BLOCK{endif}
+        \BLOCK{if sgpa} SGPA: \VAR{sgpa} \BLOCK{endif}
+        \BLOCK{if percentage} Percentage: \VAR{percentage}\% \BLOCK{endif}
+    }
+    \BLOCK{endif}
 \end{itemize}
 \BLOCK{endif}
 
@@ -103,8 +115,8 @@
 \BLOCK{endif}
 
 % --- ACADEMIC PROJECTS ---
-\section{Academic Projects}
 \BLOCK{if projects.relevant}
+\section{Academic Projects}
   \BLOCK{for project in projects.relevant}
   \begin{itemize}
     \item[] \textbf{\VAR{project.name}} | \textit{\VAR{project.technologies}}
@@ -135,8 +147,8 @@
 \BLOCK{endif}
 
 % --- TECHNICAL SKILLS ---
-\section{Technical Skills}
 \BLOCK{if skills}
+\section{Technical Skills}
 \begin{itemize}
   \BLOCK{for category, skills_list in skills.items()}
     \item \textbf{\VAR{(category| default('')).replace('_', ' ').replace('&', '\\&').replace('#', '\\#')}:} 
@@ -146,8 +158,8 @@
 \BLOCK{endif}
 
 % --- ACHIEVEMENTS ---
-\section{Achievements}
 \BLOCK{if achievements and achievements|length > 0}
+\section{Achievements}
 \begin{itemize}
   \BLOCK{for achievement in achievements}
     \item \VAR{achievement}
