@@ -8,6 +8,7 @@ import re
 import jinja2
 import time
 import uuid
+import pypandoc
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Resume Tailor Pro", page_icon="🎯", layout="wide")
@@ -281,9 +282,14 @@ if st.session_state.stage == "PROCESS":
                 subprocess.run(cmd_pdf, check=True, capture_output=True, text=True)
                 
                 #compile to DOCX USING PANDOC
-                pandoc_path="pandoc"
-                cmd_docx = [pandoc_path, tex_output_path, "-o",docx_output_path]
-                subprocess.run(cmd_docx,check=True)
+                
+                # Convert TEX → DOCX
+                pypandoc.convert_file(
+                    tex_output_path,
+                    'docx',
+                    outputfile=docx_output_path,
+                    extra_args=['--standalone']
+                )
 
             st.success("✅ Your new resume is ready!")
             person_name = resume_data.get('name', 'Tailored').replace(' ', '_')
