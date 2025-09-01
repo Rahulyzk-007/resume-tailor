@@ -10,6 +10,13 @@ import time
 import uuid
 import pypandoc
 
+
+# Ensure pandoc is available in deployment
+try:
+    pypandoc.get_pandoc_version()
+except OSError:
+    pypandoc.download_pandoc()
+
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Resume Tailor Pro", page_icon="🎯", layout="wide")
 
