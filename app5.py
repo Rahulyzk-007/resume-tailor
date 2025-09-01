@@ -275,13 +275,13 @@ if st.session_state.stage == "PROCESS":
                     f.write(rendered_tex)
                 
                 #compile to PDF USING PDFLATEX
-                pdflatex_path = "/Library/TeX/texbin/pdflatex"
+                pdflatex_path = "pdflatex"
                 cmd_pdf = [pdflatex_path, "-interaction=nonstopmode", tex_output_path]
                 subprocess.run(cmd_pdf, check=True, capture_output=True, text=True)
                 subprocess.run(cmd_pdf, check=True, capture_output=True, text=True)
                 
                 #compile to DOCX USING PANDOC
-                pandoc_path="/opt/homebrew/bin/pandoc"
+                pandoc_path="pandoc"
                 cmd_docx = [pandoc_path, tex_output_path, "-o",docx_output_path]
                 subprocess.run(cmd_docx,check=True)
 
