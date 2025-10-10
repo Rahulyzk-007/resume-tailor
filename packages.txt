@@ -3,3 +3,6 @@ texlive-fonts-recommended
 texlive-latex-extra
 lmodern
 texlive-fonts-extra
+pkg-config
+libcairo2-dev
+libgirepository1.0-dev
