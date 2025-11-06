@@ -97,7 +97,7 @@ st.markdown("""
 
 # --- API CONFIGURATION ---
 try:
-    api_key = "AIzaSyBGLXsZ5vcgOHAxbD9gLflGNOuWjKfgywQ"
+    api_key = "AIzaSyBeVHaTo4ip_wJ8aZnkaFxQMVohHc5GNKU"
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-2.5-flash")
 except Exception as e:
